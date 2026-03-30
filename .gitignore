@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# Build output
+client/dist/
+
+# Videos (too large for GitHub)
+*.mp4
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Vite cache
+client/.vite/
+
+# Logs
+*.log
