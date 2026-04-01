@@ -4,7 +4,7 @@ const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
   price: { type: Number, required: true },
   description: { type: String, required: true },
-  category: { type: String, required: true, enum: ['Pickles', 'Drinks & More', 'Farsan'] },
+  category: { type: String, required: true, enum: ['Pickles', 'Drinks & More', 'Farsan', 'Dry Fruits Items'] },
   image: { type: String, default: '/placeholder.jpg' },
 }, { timestamps: true });
 
