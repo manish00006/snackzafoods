@@ -60,10 +60,10 @@ const Navbar = () => {
       `}</style>
       <nav className="bg-white dark:bg-[#1A2218] border-b border-gray-100 dark:border-gray-800 shadow-sm sticky top-0 z-50 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-28">
+          <div className="flex justify-between h-20 sm:h-28">
             <div className="flex items-center py-2">
               <Link to="/" className="flex-shrink-0 flex items-center group">
-                <div className="relative flex items-center justify-center rounded-full w-[90px] h-[90px] md:w-[130px] md:h-[130px] my-2">
+                <div className="relative flex items-center justify-center rounded-full w-[55px] h-[55px] sm:w-[90px] sm:h-[90px] md:w-[130px] md:h-[130px] my-2">
                   
                   {/* Blue Glow Ring — tight, bright, no spread */}
                   <div className="absolute -inset-[3px] md:-inset-[5px] rounded-full bg-[conic-gradient(from_0deg,transparent_55%,#1d4ed8_75%,#3b82f6_85%,#60a5fa_95%,#93c5fd_100%)] blue-glow-ring blur-[2px] md:blur-[3px] opacity-100"></div>
@@ -75,7 +75,7 @@ const Navbar = () => {
                   alt="Snackza Foods Logo" 
                 />
               </div>
-              <span className="ml-5 font-extrabold text-3xl md:text-4xl tracking-tight text-[#2A3626] dark:text-[#EAE3D3] drop-shadow-sm font-serif group-hover:text-[#CF6B2B] dark:group-hover:text-[#F58220] transition-colors duration-300">
+              <span className="ml-2 sm:ml-5 font-extrabold text-lg sm:text-3xl md:text-4xl tracking-tight text-[#2A3626] dark:text-[#EAE3D3] drop-shadow-sm font-serif group-hover:text-[#CF6B2B] dark:group-hover:text-[#F58220] transition-colors duration-300">
                 SNACKZA FOODS
               </span>
             </Link>
