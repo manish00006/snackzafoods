@@ -41,7 +41,7 @@ const Home = () => {
                     title={`Watch Process ${num}`}
                   >
                     <div className="w-full h-full bg-black rounded-[0.85rem] overflow-hidden relative border border-white">
-                      <video src={`/assets/video${num}.mp4`} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" muted playsInline />
+                      <video src={`/assets/video${num}.mp4`} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" muted playsInline autoPlay loop preload="auto" />
                       <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
                         <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm border border-white/60 flex items-center justify-center group-hover:bg-[#8A5A44] group-hover:border-[#8A5A44] transition-colors duration-300 shadow-sm">
                           <Play className="w-3.5 h-3.5 text-white ml-0.5" fill="currentColor" />
