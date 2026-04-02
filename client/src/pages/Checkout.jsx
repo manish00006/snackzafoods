@@ -22,7 +22,7 @@ const Checkout = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const WHATSAPP_NUMBER = '917559381226';
+  const WHATSAPP_NUMBER = '917021417839';
 
   const placeOrder = async (e) => {
     e.preventDefault();
