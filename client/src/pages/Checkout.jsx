@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Info, ShieldCheck, MapPin, Navigation } from 'lucide-react';
+import { ArrowRight, Info, ShieldCheck, MapPin, Navigation, Truck } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -17,8 +17,34 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-const DEFAULT_CENTER = [19.076, 72.8777]; // Mumbai
-const DEFAULT_ZOOM = 13;
+// Shop location: Narayan Elite, Sector 23, Ghansoli, Navi Mumbai
+const SHOP_LAT = 19.1136;
+const SHOP_LNG = 73.0121;
+const FREE_KM = 1.5;       // free within 1.5 km
+const RATE_PER_KM = 15;    // ₹15 per km beyond free zone
+
+const DEFAULT_CENTER = [SHOP_LAT, SHOP_LNG];
+const DEFAULT_ZOOM = 14;
+
+// Haversine formula — straight-line distance in km between two lat/lng points
+const getDistanceKm = (lat1, lng1, lat2, lng2) => {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+// Calculate delivery charge based on distance
+const calcDelivery = (distKm) => {
+  if (distKm <= FREE_KM) return 0;
+  return Math.ceil((distKm - FREE_KM) * RATE_PER_KM);
+};
 
 const Checkout = () => {
   const { cartItems, getCartTotal, clearCart } = useCart();
@@ -27,15 +53,20 @@ const Checkout = () => {
   const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
   const [markerPos, setMarkerPos] = useState(null);
   const [geocoding, setGeocoding] = useState(false);
+  const [distanceKm, setDistanceKm] = useState(null);
 
-  const mapRef = useRef(null);       // Leaflet map instance
-  const markerRef = useRef(null);    // Leaflet marker instance
-  const mapContainerRef = useRef(null); // DOM element
+  const mapRef = useRef(null);
+  const markerRef = useRef(null);
+  const shopMarkerRef = useRef(null);
+  const mapContainerRef = useRef(null);
 
   if (cartItems.length === 0) {
     navigate('/cart');
     return null;
   }
+
+  const deliveryCharge = distanceKm !== null ? calcDelivery(distanceKm) : null;
+  const grandTotal = deliveryCharge !== null ? getCartTotal() + deliveryCharge : getCartTotal();
 
   // Initialise Leaflet map once
   useEffect(() => {
@@ -46,10 +77,23 @@ const Checkout = () => {
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
 
+    // Shop marker (orange)
+    const shopIcon = L.divIcon({
+      html: `<div style="background:#F58220;width:14px;height:14px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 6px rgba(0,0,0,0.4)"></div>`,
+      className: '',
+      iconSize: [14, 14],
+      iconAnchor: [7, 7],
+    });
+    shopMarkerRef.current = L.marker([SHOP_LAT, SHOP_LNG], { icon: shopIcon })
+      .addTo(map)
+      .bindTooltip('🏪 Snackza Foods (Shop)', { permanent: false });
+
     map.on('click', (e) => {
       const { lat, lng } = e.latlng;
       placeMarker(map, lat, lng);
       reverseGeocode(lat, lng);
+      const dist = getDistanceKm(SHOP_LAT, SHOP_LNG, lat, lng);
+      setDistanceKm(dist);
     });
 
     mapRef.current = map;
@@ -69,7 +113,6 @@ const Checkout = () => {
     setMarkerPos({ lat, lng });
   };
 
-  // Free reverse geocoding via OpenStreetMap Nominatim
   const reverseGeocode = async (lat, lng) => {
     setGeocoding(true);
     try {
@@ -95,6 +138,8 @@ const Checkout = () => {
       mapRef.current.setView([lat, lng], 16);
       placeMarker(mapRef.current, lat, lng);
       reverseGeocode(lat, lng);
+      const dist = getDistanceKm(SHOP_LAT, SHOP_LNG, lat, lng);
+      setDistanceKm(dist);
     });
   };
 
@@ -114,12 +159,15 @@ const Checkout = () => {
     message += `📍 Address: ${formData.address}\n`;
     if (markerPos) {
       message += `🗺️ Map Location: https://maps.google.com/?q=${markerPos.lat},${markerPos.lng}\n`;
+      message += `📏 Distance: ${distanceKm.toFixed(2)} km\n`;
     }
     message += `\n*Order Items:*\n`;
     cartItems.forEach((item) => {
       message += `▪️ ${item.quantity}x ${item.name} (₹${item.price * item.quantity})\n`;
     });
-    message += `\n*Total Amount:* ₹${getCartTotal()}\n\nPlease confirm my order. Thank you!`;
+    message += `\n*Subtotal:* ₹${getCartTotal()}\n`;
+    message += `*Delivery Charge:* ${deliveryCharge === 0 ? 'FREE 🎉' : `₹${deliveryCharge}`}\n`;
+    message += `*Grand Total:* ₹${grandTotal}\n\nPlease confirm my order. Thank you!`;
 
     clearCart();
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
@@ -168,7 +216,7 @@ const Checkout = () => {
                   />
                 </div>
 
-                {/* Map picker */}
+                {/* Map */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-gray-700 dark:text-[#A8B49B] flex items-center gap-1">
@@ -189,7 +237,7 @@ const Checkout = () => {
                     style={{ height: '260px', zIndex: 0 }}
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-                    Click anywhere on the map to auto-fill your delivery address.
+                    🟠 Orange dot = our shop. Click to drop your delivery pin &amp; auto-calculate charges.
                   </p>
                 </div>
 
@@ -213,7 +261,7 @@ const Checkout = () => {
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-lg p-4 flex items-start">
                   <Info className="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3 shrink-0 mt-0.5" />
                   <p className="text-xs text-blue-800 dark:text-blue-300">
-                    Clicking "Place Order via WhatsApp" will open WhatsApp with your order and map location pre-filled. Pay on delivery or as agreed on chat.
+                    Delivery is <strong>FREE within 1.5 km</strong>. Beyond that, ₹15 per km is charged. Pin your location to see the exact charge.
                   </p>
                 </div>
 
@@ -230,7 +278,7 @@ const Checkout = () => {
             <div className="bg-gray-50 dark:bg-[#141A13] p-8 md:p-10">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Order Summary</h2>
 
-              <div className="space-y-4 max-h-[340px] overflow-y-auto pr-2 mb-6 divide-y divide-gray-200 dark:divide-gray-800">
+              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 mb-6 divide-y divide-gray-200 dark:divide-gray-800">
                 {cartItems.map((item) => (
                   <div key={item._id} className="flex justify-between items-center py-3 first:pt-0">
                     <div className="flex items-center">
@@ -252,29 +300,62 @@ const Checkout = () => {
               </div>
 
               <div className="border-t border-gray-200 dark:border-gray-800 pt-6 space-y-4">
+                {/* Subtotal */}
                 <div className="flex justify-between text-gray-600 dark:text-[#A8B49B]">
                   <span>Subtotal</span>
                   <span>₹{getCartTotal()}</span>
                 </div>
+
+                {/* Delivery charge row */}
                 <div className="flex justify-between items-center text-gray-600 dark:text-[#A8B49B] font-medium">
-                  <span>Shipping</span>
-                  <span className="text-[#CF6B2B] dark:text-[#F58220] text-xs bg-orange-100 dark:bg-[#CF6B2B]/20 px-3 py-1.5 rounded-full border border-brand-orange/20 dark:border-transparent">
-                    Send us a message to get it
+                  <span className="flex items-center gap-1">
+                    <Truck className="w-4 h-4" /> Delivery
+                    {distanceKm !== null && (
+                      <span className="text-xs font-normal text-gray-400 ml-1">
+                        ({distanceKm.toFixed(2)} km)
+                      </span>
+                    )}
                   </span>
+                  {deliveryCharge === null ? (
+                    <span className="text-[#CF6B2B] dark:text-[#F58220] text-xs bg-orange-100 dark:bg-[#CF6B2B]/20 px-3 py-1.5 rounded-full">
+                      Pin location to calculate
+                    </span>
+                  ) : deliveryCharge === 0 ? (
+                    <span className="text-green-600 dark:text-green-400 font-bold text-sm bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full">
+                      FREE 🎉
+                    </span>
+                  ) : (
+                    <span className="font-semibold text-gray-900 dark:text-white">₹{deliveryCharge}</span>
+                  )}
                 </div>
+
+                {/* Grand Total */}
                 <div className="flex justify-between text-lg font-bold text-gray-900 dark:text-white pt-4 border-t border-gray-200 dark:border-gray-800">
                   <span>Total</span>
-                  <span className="text-[#CF6B2B] dark:text-[#F58220]">₹{getCartTotal()}</span>
+                  <span className="text-[#CF6B2B] dark:text-[#F58220]">
+                    ₹{deliveryCharge !== null ? grandTotal : getCartTotal()}
+                    {deliveryCharge === null && (
+                      <span className="text-xs font-normal text-gray-400 ml-1">+ delivery</span>
+                    )}
+                  </span>
                 </div>
               </div>
 
-              {/* Pin confirmation */}
+              {/* Pin confirmation card */}
               {markerPos && (
-                <div className="mt-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 rounded-xl p-4 flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
+                <div className={`mt-6 border rounded-xl p-4 flex items-start gap-3 ${
+                  deliveryCharge === 0
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800/40'
+                    : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800/40'
+                }`}>
+                  <MapPin className={`w-5 h-5 shrink-0 mt-0.5 ${deliveryCharge === 0 ? 'text-green-600 dark:text-green-400' : 'text-[#CF6B2B]'}`} />
                   <div>
-                    <p className="text-xs font-semibold text-green-800 dark:text-green-300">Delivery pin set ✓</p>
-                    <p className="text-xs text-green-700 dark:text-green-400 mt-0.5 break-all">{formData.address}</p>
+                    <p className={`text-xs font-semibold ${deliveryCharge === 0 ? 'text-green-800 dark:text-green-300' : 'text-orange-800 dark:text-orange-300'}`}>
+                      Delivery pin set ✓ — {distanceKm.toFixed(2)} km from shop
+                    </p>
+                    <p className={`text-xs mt-0.5 break-all ${deliveryCharge === 0 ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-400'}`}>
+                      {formData.address}
+                    </p>
                   </div>
                 </div>
               )}
