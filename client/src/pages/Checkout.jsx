@@ -17,14 +17,14 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-// Shop location: Narayan Elite, Sector 23, Ghansoli, Navi Mumbai
-const SHOP_LAT = 19.1136;
-const SHOP_LNG = 73.0121;
+// Shop location: Ghansoli Road, Sector 23, Navi Mumbai, 400701
+const SHOP_LAT = 19.1353385;
+const SHOP_LNG = 72.9983139;
 const FREE_KM = 1.5;       // free within 1.5 km
 const RATE_PER_KM = 15;    // ₹15 per km beyond free zone
 
 const DEFAULT_CENTER = [SHOP_LAT, SHOP_LNG];
-const DEFAULT_ZOOM = 14;
+const DEFAULT_ZOOM = 15;
 
 // Haversine formula — straight-line distance in km between two lat/lng points
 const getDistanceKm = (lat1, lng1, lat2, lng2) => {
