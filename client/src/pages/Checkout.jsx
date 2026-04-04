@@ -284,56 +284,55 @@ const Checkout = () => {
                   </div>
                 )}
 
-                {/* ── DELIVERY MODE ── */}
-                {!isPickup && (
-                  <>
-                    {/* Map */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-sm font-medium text-gray-700 dark:text-[#A8B49B] flex items-center gap-1">
-                          <MapPin className="w-4 h-4 text-[#CF6B2B]" /> Pin Your Location
-                        </label>
-                        <button
-                          type="button"
-                          onClick={useMyLocation}
-                          className="text-xs flex items-center gap-1 text-[#CF6B2B] hover:text-[#F58220] font-semibold transition-colors"
-                        >
-                          <Navigation className="w-3.5 h-3.5" /> Use My Location
-                        </button>
-                      </div>
-                      <div
-                        ref={mapContainerRef}
-                        className="w-full rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm"
-                        style={{ height: '480px', zIndex: 0 }}
-                      />
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-                        🟠 Orange dot = our shop. Click to drop your delivery pin &amp; auto-calculate charges.
-                      </p>
-                    </div>
-
-                    {/* Address */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-[#A8B49B] mb-1">
-                        Complete Address *
-                        {geocoding && <span className="ml-2 text-xs text-[#CF6B2B] animate-pulse">Detecting…</span>}
+                {/* ── DELIVERY MODE — always in DOM, hidden via CSS when pickup ── */}
+                <div style={{ display: isPickup ? 'none' : 'block' }} className="space-y-5">
+                  {/* Map */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-medium text-gray-700 dark:text-[#A8B49B] flex items-center gap-1">
+                        <MapPin className="w-4 h-4 text-[#CF6B2B]" /> Pin Your Location
                       </label>
-                      <textarea
-                        name="address" required
-                        value={formData.address} onChange={handleChange}
-                        className="input-field min-h-[90px] resize-y"
-                        placeholder="House no, Building, Street, Area, City, Pincode"
-                      />
+                      <button
+                        type="button"
+                        onClick={useMyLocation}
+                        className="text-xs flex items-center gap-1 text-[#CF6B2B] hover:text-[#F58220] font-semibold transition-colors"
+                      >
+                        <Navigation className="w-3.5 h-3.5" /> Use My Location
+                      </button>
                     </div>
+                    <div
+                      ref={mapContainerRef}
+                      className="w-full rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm"
+                      style={{ height: '480px', zIndex: 0 }}
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                      🟠 Orange dot = our shop. Click to drop your delivery pin &amp; auto-calculate charges.
+                    </p>
+                  </div>
 
-                    {/* Info banner */}
-                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-lg p-4 flex items-start">
-                      <Info className="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3 shrink-0 mt-0.5" />
-                      <p className="text-xs text-blue-800 dark:text-blue-300">
-                        Delivery is <strong>FREE within 1.5 km</strong>. Beyond that, ₹15 per km is charged. Pin your location to see the exact charge.
-                      </p>
-                    </div>
-                  </>
-                )}
+                  {/* Address */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-[#A8B49B] mb-1">
+                      Complete Address *
+                      {geocoding && <span className="ml-2 text-xs text-[#CF6B2B] animate-pulse">Detecting…</span>}
+                    </label>
+                    <textarea
+                      name="address"
+                      required={!isPickup}
+                      value={formData.address} onChange={handleChange}
+                      className="input-field min-h-[90px] resize-y"
+                      placeholder="House no, Building, Street, Area, City, Pincode"
+                    />
+                  </div>
+
+                  {/* Info banner */}
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-lg p-4 flex items-start">
+                    <Info className="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3 shrink-0 mt-0.5" />
+                    <p className="text-xs text-blue-800 dark:text-blue-300">
+                      Delivery is <strong>FREE within 1.5 km</strong>. Beyond that, ₹15 per km is charged. Pin your location to see the exact charge.
+                    </p>
+                  </div>
+                </div>
 
                 <button
                   type="submit"
