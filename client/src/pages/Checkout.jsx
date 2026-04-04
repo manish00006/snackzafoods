@@ -234,7 +234,7 @@ const Checkout = () => {
                   <div
                     ref={mapContainerRef}
                     className="w-full rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm"
-                    style={{ height: '260px', zIndex: 0 }}
+                    style={{ height: '380px', zIndex: 0 }}
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
                     🟠 Orange dot = our shop. Click to drop your delivery pin &amp; auto-calculate charges.
