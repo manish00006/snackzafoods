@@ -1,12 +1,24 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Info, ShieldCheck, MapPin, Navigation } from 'lucide-react';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
-const MAP_CONTAINER_STYLE = { width: '100%', height: '260px', borderRadius: '12px' };
-const DEFAULT_CENTER = { lat: 19.076, lng: 72.8777 }; // Mumbai default
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+// Fix Leaflet default marker icon broken by bundlers
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
+
+const DEFAULT_CENTER = [19.076, 72.8777]; // Mumbai
+const DEFAULT_ZOOM = 13;
 
 const Checkout = () => {
   const { cartItems, getCartTotal, clearCart } = useCart();
@@ -14,33 +26,60 @@ const Checkout = () => {
 
   const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
   const [markerPos, setMarkerPos] = useState(null);
-  const [mapCenter, setMapCenter] = useState(DEFAULT_CENTER);
   const [geocoding, setGeocoding] = useState(false);
-  const mapRef = useRef(null);
 
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-  });
+  const mapRef = useRef(null);       // Leaflet map instance
+  const markerRef = useRef(null);    // Leaflet marker instance
+  const mapContainerRef = useRef(null); // DOM element
 
   if (cartItems.length === 0) {
     navigate('/cart');
     return null;
   }
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  // Initialise Leaflet map once
+  useEffect(() => {
+    if (mapRef.current || !mapContainerRef.current) return;
+
+    const map = L.map(mapContainerRef.current).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
+
+    map.on('click', (e) => {
+      const { lat, lng } = e.latlng;
+      placeMarker(map, lat, lng);
+      reverseGeocode(lat, lng);
+    });
+
+    mapRef.current = map;
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  const placeMarker = (map, lat, lng) => {
+    if (markerRef.current) {
+      markerRef.current.setLatLng([lat, lng]);
+    } else {
+      markerRef.current = L.marker([lat, lng]).addTo(map);
+    }
+    setMarkerPos({ lat, lng });
   };
 
-  // Reverse geocode a lat/lng into a readable address
+  // Free reverse geocoding via OpenStreetMap Nominatim
   const reverseGeocode = async (lat, lng) => {
     setGeocoding(true);
     try {
       const res = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+        { headers: { 'Accept-Language': 'en' } }
       );
       const data = await res.json();
-      if (data.results && data.results.length > 0) {
-        setFormData((prev) => ({ ...prev, address: data.results[0].formatted_address }));
+      if (data.display_name) {
+        setFormData((prev) => ({ ...prev, address: data.display_name }));
       }
     } catch (err) {
       console.error('Reverse geocoding failed:', err);
@@ -49,24 +88,18 @@ const Checkout = () => {
     }
   };
 
-  // Called when user clicks on the map
-  const onMapClick = useCallback((e) => {
-    const lat = e.latLng.lat();
-    const lng = e.latLng.lng();
-    setMarkerPos({ lat, lng });
-    reverseGeocode(lat, lng);
-  }, []);
-
-  // Use browser geolocation to center map on user's position
   const useMyLocation = () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation || !mapRef.current) return;
     navigator.geolocation.getCurrentPosition((pos) => {
       const { latitude: lat, longitude: lng } = pos.coords;
-      setMapCenter({ lat, lng });
-      setMarkerPos({ lat, lng });
+      mapRef.current.setView([lat, lng], 16);
+      placeMarker(mapRef.current, lat, lng);
       reverseGeocode(lat, lng);
-      if (mapRef.current) mapRef.current.panTo({ lat, lng });
     });
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const WHATSAPP_NUMBER = '917021417839';
@@ -88,9 +121,8 @@ const Checkout = () => {
     });
     message += `\n*Total Amount:* ₹${getCartTotal()}\n\nPlease confirm my order. Thank you!`;
 
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     clearCart();
-    window.open(whatsappUrl, '_blank');
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
     navigate('/');
   };
 
@@ -136,7 +168,7 @@ const Checkout = () => {
                   />
                 </div>
 
-                {/* Google Map picker */}
+                {/* Map picker */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-gray-700 dark:text-[#A8B49B] flex items-center gap-1">
@@ -151,49 +183,23 @@ const Checkout = () => {
                     </button>
                   </div>
 
-                  {loadError && (
-                    <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
-                      Failed to load Google Maps. Please type your address below.
-                    </div>
-                  )}
-
-                  {!isLoaded && !loadError && (
-                    <div className="w-full h-[260px] rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400 text-sm animate-pulse">
-                      Loading map…
-                    </div>
-                  )}
-
-                  {isLoaded && (
-                    <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
-                      <GoogleMap
-                        mapContainerStyle={MAP_CONTAINER_STYLE}
-                        center={mapCenter}
-                        zoom={13}
-                        onClick={onMapClick}
-                        onLoad={(map) => { mapRef.current = map; }}
-                        options={{
-                          disableDefaultUI: false,
-                          zoomControl: true,
-                          streetViewControl: false,
-                          mapTypeControl: false,
-                          fullscreenControl: false,
-                        }}
-                      >
-                        {markerPos && <Marker position={markerPos} />}
-                      </GoogleMap>
-                    </div>
-                  )}
-
+                  <div
+                    ref={mapContainerRef}
+                    className="w-full rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm"
+                    style={{ height: '260px', zIndex: 0 }}
+                  />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
                     Click anywhere on the map to auto-fill your delivery address.
                   </p>
                 </div>
 
-                {/* Address textarea */}
+                {/* Address */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-[#A8B49B] mb-1">
                     Complete Address *
-                    {geocoding && <span className="ml-2 text-xs text-[#CF6B2B] animate-pulse">Detecting…</span>}
+                    {geocoding && (
+                      <span className="ml-2 text-xs text-[#CF6B2B] animate-pulse">Detecting…</span>
+                    )}
                   </label>
                   <textarea
                     name="address" required
@@ -203,11 +209,11 @@ const Checkout = () => {
                   />
                 </div>
 
-                {/* Info banner */}
+                {/* Info */}
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-lg p-4 flex items-start">
                   <Info className="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3 shrink-0 mt-0.5" />
                   <p className="text-xs text-blue-800 dark:text-blue-300">
-                    Clicking "Place Order via WhatsApp" will redirect you to WhatsApp with your order details and map location pre-filled. Pay upon delivery or as agreed on chat.
+                    Clicking "Place Order via WhatsApp" will open WhatsApp with your order and map location pre-filled. Pay on delivery or as agreed on chat.
                   </p>
                 </div>
 
@@ -262,7 +268,7 @@ const Checkout = () => {
                 </div>
               </div>
 
-              {/* Map pin summary */}
+              {/* Pin confirmation */}
               {markerPos && (
                 <div className="mt-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/40 rounded-xl p-4 flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
