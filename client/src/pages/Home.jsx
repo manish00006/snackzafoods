@@ -1,17 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import { Play, X } from 'lucide-react';
 
 import { mockProducts } from '../data/mockProducts';
 
+const TESTIMONIALS = [
+  { name: 'Priya Sharma',  location: 'Navi Mumbai', rating: 5, avatar: 'priya',  text: 'The mango pickle is absolutely divine! Tastes exactly like the one my nani used to make. Ordering every month now! 🥭' },
+  { name: 'Rohan Desai',   location: 'Thane',       rating: 5, avatar: 'rohan',  text: 'Tried the Gulkand and Wood Apple Sharbat — both are incredible. You can really taste the difference from store-bought. Pure and fresh!' },
+  { name: 'Neha Kulkarni', location: 'Pune',        rating: 5, avatar: 'neha',   text: 'The Besan Ladoo melts in your mouth! Reminded me of festive season at home. Fast delivery and beautifully packed too. ❤️' },
+  { name: 'Amit Patil',    location: 'Mumbai',      rating: 5, avatar: 'amit',   text: 'Ordered the lemon pickle and chivda combo. Seriously the best homemade snacks I have had in years. Highly recommended!' },
+  { name: 'Sunita Joshi',  location: 'Vashi',       rating: 5, avatar: 'sunita', text: 'Love that there are no preservatives! My kids had the energy balls and they loved it. Finally something healthy and tasty together.' },
+  { name: 'Vikram Mehta',  location: 'Kharghar',    rating: 5, avatar: 'vikram', text: 'The Amla Sharbat is a game changer in summer. Ordered 2 bottles and finished them in a week. Will definitely order again!' },
+  { name: 'Kavya Nair',    location: 'Nerul',       rating: 5, avatar: 'kavya',  text: 'Mixed Pickle is so flavorful — just the right balance. Delivery was quick and the owner was very helpful on WhatsApp.' },
+  { name: 'Rahul Gupta',   location: 'Airoli',      rating: 5, avatar: 'rahul',  text: 'Chakali is perfectly crispy and not oily at all. Ordered for Diwali gifting and everyone loved it. Will be back every year! 🪔' },
+];
+
 const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [activeVideo, setActiveVideo] = useState(null);
+  const trackRef = useRef(null);
 
   useEffect(() => {
-    // In a real app, fetch from /api/products and filter featured
-    // Get Mango Pickle ('1'), Wood Apple Sharbat ('10'), and Besan Ladoo ('15')
     const featured = mockProducts.filter(p => ['1', '10', '15'].includes(p._id));
     setFeaturedProducts(featured.length > 0 ? featured : mockProducts.slice(0, 3));
   }, []);
@@ -207,7 +217,67 @@ const Home = () => {
          </div>
       </section>
 
-      {/* Video Modal Popup */}
+
+      {/* ── Testimonials ── */}
+      <section className="py-24 bg-[#F9F7F1] dark:bg-[#1C231B] overflow-hidden border-t border-gray-100 dark:border-[#2A3626] transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 text-center">
+          <div className="inline-flex items-center justify-center space-x-3 mb-4">
+            <span className="h-px w-10 bg-[#CF6B2B]"></span>
+            <span className="text-[#CF6B2B] font-extrabold uppercase tracking-[0.2em] text-sm">Happy Customers</span>
+            <span className="h-px w-10 bg-[#CF6B2B]"></span>
+          </div>
+          <h2 className="text-3xl md:text-5xl font-extrabold text-[#2A3626] dark:text-[#EAE3D3]">What Our Customers Say</h2>
+          <p className="mt-3 text-[#5C6453] dark:text-[#A8B49B]">Real reviews from real people who love our homemade products</p>
+        </div>
+
+        <div
+          className="relative"
+          onMouseEnter={() => trackRef.current && (trackRef.current.style.animationPlayState = 'paused')}
+          onMouseLeave={() => trackRef.current && (trackRef.current.style.animationPlayState = 'running')}
+        >
+          <div
+            ref={trackRef}
+            className="flex gap-6 w-max px-6"
+            style={{ animation: 'scrollLeft 40s linear infinite' }}
+          >
+            {[...TESTIMONIALS, ...TESTIMONIALS].map((t, i) => (
+              <div
+                key={i}
+                className="w-80 flex-shrink-0 bg-white dark:bg-[#1A2218] rounded-3xl p-7 shadow-md border border-gray-100 dark:border-gray-800 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              >
+                <div className="flex mb-3">
+                  {Array.from({ length: t.rating }).map((_, s) => (
+                    <span key={s} className="text-[#F58220] text-lg">★</span>
+                  ))}
+                </div>
+                <p className="text-gray-700 dark:text-[#A8B49B] text-sm leading-relaxed mb-6 italic">"{t.text}"</p>
+                <div className="flex items-center gap-3">
+                  <img
+                    src={`https://api.dicebear.com/8.x/thumbs/svg?seed=${t.avatar}&backgroundColor=CF6B2B,2A3626,8A5A44,F58220&backgroundType=gradientLinear`}
+                    alt={t.name}
+                    className="w-12 h-12 rounded-full border-2 border-[#CF6B2B]/30 bg-orange-50"
+                  />
+                  <div>
+                    <p className="font-bold text-gray-900 dark:text-white text-sm">{t.name}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">📍 {t.location}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#F9F7F1] dark:from-[#1C231B] to-transparent"></div>
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[#F9F7F1] dark:from-[#1C231B] to-transparent"></div>
+        </div>
+
+        <style>{`
+          @keyframes scrollLeft {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+        `}</style>
+      </section>
+
+
       {activeVideo && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setActiveVideo(null)}>
           <div 
