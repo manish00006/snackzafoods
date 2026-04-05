@@ -14,26 +14,31 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem('snackza-cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
+  // cartKey = _id + '_' + size  (e.g. '1_halfKg')
+  // If no size provided, fall back to _id for backward compat
+  const getKey = (item) => item.cartKey || item._id;
+
   const addToCart = (product, quantity = 1) => {
     setCartItems(prev => {
-      const existing = prev.find(item => item._id === product._id);
+      const key = getKey(product);
+      const existing = prev.find(item => getKey(item) === key);
       if (existing) {
         return prev.map(item =>
-          item._id === product._id ? { ...item, quantity: item.quantity + quantity } : item
+          getKey(item) === key ? { ...item, quantity: item.quantity + quantity } : item
         );
       }
       return [...prev, { ...product, quantity }];
     });
   };
 
-  const removeFromCart = (productId) => {
-    setCartItems(prev => prev.filter(item => item._id !== productId));
+  const removeFromCart = (cartKey) => {
+    setCartItems(prev => prev.filter(item => getKey(item) !== cartKey));
   };
 
-  const updateQuantity = (productId, quantity) => {
-    if (quantity <= 0) return removeFromCart(productId);
-    setCartItems(prev => prev.map(item => 
-      item._id === productId ? { ...item, quantity } : item
+  const updateQuantity = (cartKey, quantity) => {
+    if (quantity <= 0) return removeFromCart(cartKey);
+    setCartItems(prev => prev.map(item =>
+      getKey(item) === cartKey ? { ...item, quantity } : item
     ));
   };
 
