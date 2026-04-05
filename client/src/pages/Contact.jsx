@@ -1,10 +1,46 @@
-import { Phone, MapPin, Mail, Clock, Send } from 'lucide-react';
+import { useState } from 'react';
+import { Phone, MapPin, Clock, Send } from 'lucide-react';
+
+const WHATSAPP_NUMBER = '917021417839';
 
 const Contact = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    inquiry: 'General Question',
+    message: '',
+  });
+  const [sent, setSent] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    const text =
+      `*New Inquiry - Snackza Foods* 📩\n\n` +
+      `👤 *Name:* ${formData.name}\n` +
+      `📞 *Phone:* ${formData.phone}\n` +
+      `📋 *Inquiry Type:* ${formData.inquiry}\n\n` +
+      `💬 *Message:*\n${formData.message}\n\n` +
+      `_Sent from the Snackza Foods website._`;
+
+    window.open(
+      `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`,
+      '_blank'
+    );
+
+    setSent(true);
+    setFormData({ name: '', phone: '', inquiry: 'General Question', message: '' });
+    setTimeout(() => setSent(false), 5000);
+  };
+
   return (
     <div className="bg-[#F9F7F1] dark:bg-[#161B15] min-h-screen py-10 lg:py-20 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         <div className="text-center mb-16">
           <h1 className="text-4xl font-extrabold text-[#2A3626] dark:text-[#EAE3D3] mb-4">Get in Touch</h1>
           <p className="text-xl text-gray-600 dark:text-[#A8B49B] max-w-2xl mx-auto">
@@ -13,12 +49,12 @@ const Contact = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
-          
+
           {/* Contact Details */}
           <div>
             <div className="bg-white dark:bg-[#1A2218] rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-800 mb-8 transform hover:-translate-y-1 transition-transform">
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Contact Information</h3>
-              
+
               <ul className="space-y-8">
                 <li className="flex items-start">
                   <div className="bg-orange-100 dark:bg-[#CF6B2B]/20 p-3 rounded-full text-[#CF6B2B] mr-4 shrink-0 mt-1">
@@ -32,7 +68,7 @@ const Contact = () => {
                     </p>
                   </div>
                 </li>
-                
+
                 <li className="flex items-start">
                   <div className="bg-blue-100 dark:bg-[#2A3626] p-3 rounded-full text-[#2A3626] dark:text-[#A8B49B] mr-4 shrink-0 mt-1">
                     <Phone className="w-6 h-6" />
@@ -60,48 +96,92 @@ const Contact = () => {
                 </li>
               </ul>
             </div>
-            
+
             <div className="bg-gradient-to-r from-[#CF6B2B] to-[#2A3626] dark:from-[#CF6B2B] dark:to-[#0D120C] rounded-3xl p-8 text-white shadow-lg text-center lg:text-left flex flex-col md:flex-row items-center justify-between">
-               <div>
-                 <h4 className="text-xl font-bold mb-2">🚚 Home Delivery</h4>
-                 <p className="text-white/80 text-sm md:text-base max-w-sm">We deliver our fresh, homemade goodness right to your doorstep across Navi Mumbai.</p>
-               </div>
-               <div className="text-6xl mt-6 lg:mt-0 opacity-80 animate-bounce">🛵</div>
+              <div>
+                <h4 className="text-xl font-bold mb-2">🚚 Home Delivery</h4>
+                <p className="text-white/80 text-sm md:text-base max-w-sm">We deliver our fresh, homemade goodness right to your doorstep across Navi Mumbai.</p>
+              </div>
+              <div className="text-6xl mt-6 lg:mt-0 opacity-80 animate-bounce">🛵</div>
             </div>
           </div>
-          
+
           {/* Contact Form */}
           <div className="bg-white dark:bg-[#1A2218] rounded-3xl p-8 md:p-12 shadow-lg border border-gray-100 dark:border-gray-800">
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Send us a Message</h3>
-            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-[#A8B49B] mb-2">Your Name</label>
-                <input type="text" className="input-field bg-gray-50 dark:bg-[#141A13]" placeholder="Shruti Sharma" />
+
+            {/* Success banner */}
+            {sent && (
+              <div className="mb-5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-xl p-4 text-green-800 dark:text-green-300 text-sm font-medium flex items-center gap-2">
+                ✅ WhatsApp opened with your message! We'll reply shortly.
               </div>
-              
+            )}
+
+            <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-[#A8B49B] mb-2">Phone Number</label>
-                <input type="tel" className="input-field bg-gray-50 dark:bg-[#141A13]" placeholder="+91 98765 43210" />
+                <label className="block text-sm font-medium text-gray-700 dark:text-[#A8B49B] mb-2">Your Name *</label>
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="input-field bg-gray-50 dark:bg-[#141A13]"
+                  placeholder="Shruti Sharma"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-[#A8B49B] mb-2">Phone Number *</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  required
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="input-field bg-gray-50 dark:bg-[#141A13]"
+                  placeholder="+91 98765 43210"
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-[#A8B49B] mb-2">Inquiry Type</label>
-                <select className="input-field bg-gray-50 dark:bg-[#141A13] text-gray-700 dark:text-[#EAE3D3]">
-                   <option>General Question</option>
-                   <option>Bulk Order / Events</option>
-                   <option>Delivery Information</option>
-                   <option>Feedback</option>
+                <select
+                  name="inquiry"
+                  value={formData.inquiry}
+                  onChange={handleChange}
+                  className="input-field bg-gray-50 dark:bg-[#141A13] text-gray-700 dark:text-[#EAE3D3]"
+                >
+                  <option>General Question</option>
+                  <option>Bulk Order / Events</option>
+                  <option>Delivery Information</option>
+                  <option>Feedback</option>
                 </select>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-[#A8B49B] mb-2">Message</label>
-                <textarea className="input-field bg-gray-50 dark:bg-[#141A13] min-h-[120px] resize-y" placeholder="How can we help you?"></textarea>
+                <label className="block text-sm font-medium text-gray-700 dark:text-[#A8B49B] mb-2">Message *</label>
+                <textarea
+                  name="message"
+                  required
+                  value={formData.message}
+                  onChange={handleChange}
+                  className="input-field bg-gray-50 dark:bg-[#141A13] min-h-[120px] resize-y"
+                  placeholder="How can we help you?"
+                />
               </div>
-              
-              <button className="btn-primary w-full py-4 text-lg font-bold flex items-center justify-center group bg-[#2A3626] dark:bg-[#CF6B2B] hover:bg-[#1A2218] dark:hover:bg-[#F97316]">
-                Send Message <Send className="w-5 h-5 ml-2 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+
+              <button
+                type="submit"
+                className="btn-primary w-full py-4 text-lg font-bold flex items-center justify-center group bg-[#2A3626] dark:bg-[#CF6B2B] hover:bg-[#1A2218] dark:hover:bg-[#F97316]"
+              >
+                Send Message via WhatsApp
+                <Send className="w-5 h-5 ml-2 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
               </button>
+
+              <p className="text-xs text-center text-gray-400 dark:text-gray-500">
+                Clicking will open WhatsApp with your message pre-filled.
+              </p>
             </form>
           </div>
 
